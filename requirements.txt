@@ -1,0 +1,10 @@
+flask
+flask-sqlalchemy
+flask-swagger-ui
+flask-cors
+PyJWT
+joblib
+scikit-learn
+pdfplumber
+docx2txt
+pandas

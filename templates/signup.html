@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signup | AI Recruitment Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        body {
+            background: radial-gradient(circle at top right, #1e293b, #0f172a);
+            height: 100vh;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Inter', sans-serif;
+            margin: 0; overflow: hidden;
+        }
+        .bg-blob {
+            position: absolute;
+            width: 500px; height: 500px;
+            background: linear-gradient(135deg, rgba(37,117,252,0.2), rgba(106,17,203,0.2));
+            border-radius: 50%; filter: blur(80px);
+            z-index: -1; animation: float 20s infinite alternate;
+        }
+        @keyframes float {
+            0%   { transform: translate(-10%, -10%); }
+            100% { transform: translate(20%, 20%); }
+        }
+        .auth-card {
+            width: 420px;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 24px; padding: 40px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+        .brand-logo {
+            width: 60px; height: 60px;
+            background: linear-gradient(135deg, #6a11cb, #2575fc);
+            color: white; border-radius: 15px;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 20px; font-size: 1.8rem;
+        }
+        .form-label { font-weight: 600; font-size: 0.85rem; color: #64748b; }
+        .form-control { border-radius: 12px; padding: 12px; border: 2px solid #e2e8f0; background: #f8fafc; }
+        .btn-signup {
+            background: linear-gradient(135deg, #2575fc, #6a11cb);
+            color: white; border: none; border-radius: 12px;
+            padding: 14px; font-weight: 700;
+        }
+        .btn-signup:hover { opacity: 0.9; color: white; }
+    </style>
+</head>
+<body>
+<div class="bg-blob"></div>
+<div class="auth-card">
+    <div class="brand-logo"><i class="bi bi-person-plus-fill"></i></div>
+    <div class="text-center mb-4">
+        <h3 class="fw-bold">Create Account</h3>
+        <p class="text-muted small">Join our AI-powered talent network</p>
+    </div>
+
+    <div id="errorAlert" class="alert alert-danger small py-2 d-none"></div>
+    <div id="successAlert" class="alert alert-success small py-2 d-none"></div>
+
+    <form id="signupForm">
+        <div class="mb-3">
+            <label class="form-label text-uppercase">Username</label>
+            <input type="text" id="username" name="username" class="form-control"
+                   placeholder="Choose a unique username" required autocomplete="username">
+        </div>
+        <div class="mb-3">
+            <label class="form-label text-uppercase">Password</label>
+            <input type="password" id="password" name="password" class="form-control"
+                   placeholder="••••••••" required autocomplete="new-password">
+        </div>
+        <button id="signupBtn" type="submit" class="btn btn-signup w-100 shadow mt-2">
+            REGISTER NOW <i class="bi bi-check-circle ms-1"></i>
+        </button>
+    </form>
+
+    <div class="text-center mt-4 pt-3 border-top">
+        <p class="small text-muted mb-0">Already have an account?</p>
+        <a href="{{ url_for('login') }}" class="text-primary fw-bold small text-decoration-none">Sign In Here</a>
+    </div>
+</div>
+
+<script>
+    document.getElementById('signupForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const btn        = document.getElementById('signupBtn');
+        const errorDiv   = document.getElementById('errorAlert');
+        const successDiv = document.getElementById('successAlert');
+        const username   = document.getElementById('username').value.trim();
+        const password   = document.getElementById('password').value;
+
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creating account...';
+        btn.disabled  = true;
+        errorDiv.classList.add('d-none');
+        successDiv.classList.add('d-none');
+
+        try {
+            // Step 1: Register via server-side form
+            const regRes = await fetch('/signup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({ username, password })
+            });
+
+            // If signup redirected to login, it succeeded
+            if (regRes.redirected && regRes.url.includes('/login')) {
+                // Step 2: Auto-login via API to get JWT
+                const loginRes = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                if (loginRes.ok) {
+                    const data = await loginRes.json();
+                    localStorage.setItem('jwt_token', data.token);
+                    localStorage.setItem('jwt_user',  JSON.stringify(data.user));
+
+                    // Also establish Flask session
+                    await fetch('/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: new URLSearchParams({ username, password })
+                    });
+
+                    successDiv.textContent = 'Account created! Redirecting...';
+                    successDiv.classList.remove('d-none');
+                    setTimeout(() => window.location.href = '/dashboard', 800);
+                } else {
+                    window.location.href = '/login';
+                }
+            } else {
+                // Server returned the signup page again — likely "User exists"
+                throw new Error('Username already taken. Please choose another.');
+            }
+
+        } catch (err) {
+            errorDiv.textContent = err.message;
+            errorDiv.classList.remove('d-none');
+            btn.innerHTML = 'REGISTER NOW <i class="bi bi-check-circle ms-1"></i>';
+            btn.disabled  = false;
+        }
+    });
+</script>
+</body>
+</html>

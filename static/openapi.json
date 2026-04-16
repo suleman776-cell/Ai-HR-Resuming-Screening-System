@@ -1,0 +1,285 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "AI HR Recruiter API",
+    "description": "## Authentication\n1. Call `POST /api/login` with your credentials.\n2. Copy the `token` from the response.\n3. Click **Authorize** → paste the token (Swagger adds `Bearer` automatically).\n4. All `/api/*` routes except `/api/login` require a valid JWT.\n\n**Middleware:** Every protected request is intercepted by `middleware_login.py` which decodes `user_id`, `username`, and `role` from the token and makes them available to every route via `flask.g.user_ctx`.",
+    "version": "1.0.0"
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Paste the token returned by POST /api/login. Swagger adds 'Bearer' automatically."
+      }
+    },
+    "schemas": {
+      "LoginRequest": {
+        "type": "object",
+        "required": ["username", "password"],
+        "properties": {
+          "username": { "type": "string",          "example": "admin" },
+          "password": { "type": "string", "format": "password", "example": "123" }
+        }
+      },
+      "LoginResponse": {
+        "type": "object",
+        "properties": {
+          "message":    { "type": "string",  "example": "Login successful" },
+          "token":      { "type": "string",  "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." },
+          "token_type": { "type": "string",  "example": "Bearer" },
+          "expires_in": { "type": "integer", "example": 86400 },
+          "user": {
+            "type": "object",
+            "properties": {
+              "id":       { "type": "integer", "example": 1 },
+              "username": { "type": "string",  "example": "admin" },
+              "role":     { "type": "string",  "example": "admin" }
+            }
+          }
+        }
+      },
+      "UserContext": {
+        "type": "object",
+        "description": "Identity decoded from the JWT by middleware_login.py",
+        "properties": {
+          "user_id":  { "type": "integer", "example": 1 },
+          "username": { "type": "string",  "example": "admin" },
+          "role":     { "type": "string",  "example": "admin" }
+        }
+      },
+      "Job": {
+        "type": "object",
+        "properties": {
+          "id":          { "type": "integer", "example": 1 },
+          "title":       { "type": "string",  "example": "Senior Python Developer" },
+          "description": { "type": "string",  "example": "We need a Python developer with Flask and AWS experience." }
+        }
+      },
+      "JobRequest": {
+        "type": "object",
+        "required": ["title", "description"],
+        "properties": {
+          "title":       { "type": "string", "example": "Senior Python Developer" },
+          "description": { "type": "string", "example": "We need a Python developer with Flask and AWS experience." }
+        }
+      },
+      "AnalysisRecord": {
+        "type": "object",
+        "properties": {
+          "id":             { "type": "integer", "example": 1 },
+          "user_id":        { "type": "integer", "example": 1 },
+          "job_id":         { "type": "integer", "example": 1 },
+          "filename":       { "type": "string",  "example": "a1b2c3d4_resume.docx" },
+          "score":          { "type": "number",  "example": 78.45 },
+          "matched_skills": { "type": "array", "items": { "type": "string" }, "example": ["python", "flask"] },
+          "missing_skills": { "type": "array", "items": { "type": "string" }, "example": ["aws", "docker"] },
+          "status":         { "type": "string",  "example": "analyzed" },
+          "timestamp":      { "type": "string",  "example": "2026-04-15 05:00:00" }
+        }
+      },
+      "AnalyzeResponse": {
+        "type": "object",
+        "properties": {
+          "record_id":      { "type": "integer", "example": 1 },
+          "filename":       { "type": "string",  "example": "a1b2c3d4_resume.docx" },
+          "score":          { "type": "number",  "example": 78.45 },
+          "matched_skills": { "type": "array", "items": { "type": "string" }, "example": ["python", "flask"] },
+          "missing_skills": { "type": "array", "items": { "type": "string" }, "example": ["aws", "docker"] },
+          "analyzed_by": {
+            "type": "object",
+            "properties": {
+              "user_id":  { "type": "integer", "example": 1 },
+              "username": { "type": "string",  "example": "admin" }
+            }
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": { "type": "string", "example": "Token has expired. Please login again." },
+          "hint":  { "type": "string", "example": "Obtain a token from POST /api/login" }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/api/login": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Login — get a JWT token",
+        "description": "Public endpoint. Validates credentials, mints a signed JWT (HS256, 24 h) with `sub`, `user_id`, `username`, and `role` encoded inside, saves it to the `tokens` table (`revoked_is = 0`), and returns it.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/LoginRequest" },
+              "example": { "username": "admin", "password": "123" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful login",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LoginResponse" } } }
+          },
+          "400": {
+            "description": "Missing fields",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" }, "example": { "error": "username and password are required" } } }
+          },
+          "401": {
+            "description": "Wrong credentials",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" }, "example": { "error": "Invalid username or password" } } }
+          }
+        }
+      }
+    },
+    "/api/me": {
+      "get": {
+        "tags": ["Authentication"],
+        "summary": "Get current user (UserContext)",
+        "description": "Returns the `user_id`, `username`, and `role` decoded from the JWT by `middleware_login.py`.",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Decoded UserContext",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UserContext" } } }
+          },
+          "401": {
+            "description": "Missing, expired, or invalid token",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "examples": {
+                  "missing":  { "summary": "No header",      "value": { "error": "Missing or malformed Authorization header. Expected: 'Authorization: Bearer <token>'" } },
+                  "expired":  { "summary": "Expired token",  "value": { "error": "Token has expired. Please login again." } },
+                  "invalid":  { "summary": "Invalid token",  "value": { "error": "Invalid token: Subject must be a string" } }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/jobs": {
+      "get": {
+        "tags": ["Jobs"],
+        "summary": "List all jobs",
+        "description": "Returns all job postings. Requires a valid JWT (any role).",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "List of jobs",
+            "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Job" } } } }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Jobs"],
+        "summary": "Create a job",
+        "description": "Creates a new job posting. **Admin role required.** The authenticated user is identified via the JWT decoded by `middleware_login.py`.",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/JobRequest" },
+              "example": { "title": "Senior Python Developer", "description": "Flask, AWS, Docker experience required." }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Job created",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Job" } } }
+          },
+          "400": {
+            "description": "Missing fields",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+          },
+          "403": {
+            "description": "Admin role required",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" }, "example": { "error": "Admin role required" } } }
+          }
+        }
+      }
+    },
+    "/api/records": {
+      "get": {
+        "tags": ["Analysis"],
+        "summary": "Get analysis records",
+        "description": "Returns resume analysis records. **Admin** sees all records sorted by score. **Regular users** see only their own records. User identity comes from the JWT decoded by `middleware_login.py`.",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "List of analysis records",
+            "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/AnalysisRecord" } } } }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+          }
+        }
+      }
+    },
+    "/api/analyze": {
+      "post": {
+        "tags": ["Analysis"],
+        "summary": "Analyze a resume against a job",
+        "description": "Upload a `.docx` or `.pdf` resume and score it against a job description using TF-IDF cosine similarity + skill matching. The record is saved under the authenticated user's ID (from JWT). Requires a valid JWT.",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["resume", "job_id"],
+                "properties": {
+                  "resume": { "type": "string", "format": "binary", "description": ".docx or .pdf resume file" },
+                  "job_id": { "type": "integer", "example": 1, "description": "ID of the job to score against" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Analysis complete",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AnalyzeResponse" } } }
+          },
+          "400": {
+            "description": "Missing file or job_id",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+          },
+          "404": {
+            "description": "Job not found",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" }, "example": { "error": "Job 99 not found" } } }
+          },
+          "422": {
+            "description": "Could not extract text from file",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+          },
+          "503": {
+            "description": "AI vectorizer not available",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+          }
+        }
+      }
+    }
+  }
+}
