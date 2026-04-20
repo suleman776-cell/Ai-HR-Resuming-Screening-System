@@ -118,57 +118,26 @@ def login():
         user = User.query.filter_by(username=u).first()
         if user and check_password_hash(user.password, p):
             session.update({'user': user.username, 'role': user.role, 'user_id': user.id})
-            return redirect(url_for('dashboard'))
+            if user.role == 'admin':
+                return redirect(url_for('admin_dashboard'))
+            return redirect(url_for('candidate_dashboard'))
         flash("Invalid credentials", "danger")
     return render_template('login.html')
 
-@app.route('/dashboard', methods=['GET', 'POST'])
+@app.route('/admin')
+def admin_dashboard():
+    """Serve the admin dashboard HTML — JS handles auth via localStorage token."""
+    return render_template('admindashboard.html')
+
+@app.route('/candidate')
+def candidate_dashboard():
+    """Serve the candidate dashboard HTML — JS handles auth via localStorage token."""
+    return render_template('Candidate.html')
+
+@app.route('/dashboard')
 def dashboard():
-    if 'user' not in session:
-        return redirect(url_for('login'))
-    is_hr   = session['role'] == "admin"
-    job     = Job.query.first()
-    jd_text = job.description if job else ""
-
-    if request.method == 'POST':
-        if is_hr:
-            new_jd = request.form.get('jd')
-            if job:
-                job.description = new_jd
-            else:
-                db.session.add(Job(description=new_jd))
-            db.session.commit()
-        else:
-            file = request.files.get('resume')
-            if file and jd_text and AI_READY:
-                filename = f"{uuid.uuid4().hex[:8]}_{secure_filename(file.filename)}"
-                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                file.save(filepath)
-                resume_text = extract_text(filepath)
-                if resume_text:
-                    vec_sim = cosine_similarity(
-                        vectorizer.transform([jd_text.lower()]),
-                        vectorizer.transform([resume_text.lower()])
-                    )[0][0] * 100
-                    matched, missing = get_skills_analysis(resume_text, jd_text)
-                    skill_score = (len(matched) / (len(matched) + len(missing)) * 100) \
-                                  if (len(matched) + len(missing)) > 0 else 0
-                    final_score = round((0.7 * vec_sim) + (0.3 * skill_score), 2)
-                    db.session.add(AnalysisRecord(
-                        user_id        = session['user_id'],
-                        filename       = filename,
-                        score          = final_score,
-                        matched_skills = json.dumps(matched),
-                        missing_skills = json.dumps(missing),
-                    ))
-                    db.session.commit()
-        return redirect(url_for('dashboard'))
-
-    records = (AnalysisRecord.query.order_by(AnalysisRecord.score.desc()).all()
-               if is_hr else
-               AnalysisRecord.query.filter_by(user_id=session['user_id']).all())
-    return render_template('index.html', records=records, jd=jd_text,
-                           is_hr=is_hr, user=session['user'])
+    """Legacy route — JS will redirect based on role after token check."""
+    return redirect(url_for('login'))
 
 @app.route('/download/<int:record_id>')
 def download(record_id):
@@ -176,14 +145,23 @@ def download(record_id):
         return redirect(url_for('login'))
     record = AnalysisRecord.query.get_or_404(record_id)
     if session['role'] != 'admin' and record.user_id != session['user_id']:
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('candidate_dashboard'))
     return send_file(os.path.join(app.config['UPLOAD_FOLDER'], record.filename),
                      as_attachment=True)
 
 @app.route('/logout')
 def logout():
     session.clear()
-    return redirect(url_for('login'))
+    # Return a page that clears localStorage then redirects — avoids loop
+    return '''<!DOCTYPE html>
+<html><head><title>Logging out…</title></head>
+<body>
+<script>
+    localStorage.removeItem("jwt_token");
+    localStorage.removeItem("jwt_user");
+    window.location.replace("/login");
+</script>
+</body></html>'''
 
 if __name__ == '__main__':
     with app.app_context():

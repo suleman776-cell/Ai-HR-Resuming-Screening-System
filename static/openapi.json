@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "AI HR Recruiter API",
-    "description": "## Authentication\n1. Call `POST /api/login` with your credentials.\n2. Copy the `token` from the response.\n3. Click **Authorize** → paste the token (Swagger adds `Bearer` automatically).\n4. All `/api/*` routes except `/api/login` require a valid JWT.\n\n**Middleware:** Every protected request is intercepted by `middleware_login.py` which decodes `user_id`, `username`, and `role` from the token and makes them available to every route via `flask.g.user_ctx`.",
+    "description": "## Authentication\n1. Call `POST /api/login` with your credentials.\n2. Copy the `token` from the response.\n3. Click **Authorize** and paste the token (Swagger adds `Bearer` automatically).\n4. All `/api/*` routes except `/api/login` require a valid JWT.\n\n**Middleware:** Every protected request is intercepted by `middleware_login.py` which decodes `user_id`, `username`, and `role` from the token and makes them available to every route via `flask.g.user_ctx`.",
     "version": "1.0.0"
   },
   "components": {
@@ -110,7 +110,7 @@
       "post": {
         "tags": ["Authentication"],
         "summary": "Login — get a JWT token",
-        "description": "Public endpoint. Validates credentials, mints a signed JWT (HS256, 24 h) with `sub`, `user_id`, `username`, and `role` encoded inside, saves it to the `tokens` table (`revoked_is = 0`), and returns it.",
+        "description": "Public endpoint. Validates credentials, mints a signed JWT (HS256, 24h) with `sub`, `user_id`, `username`, and `role` encoded inside, saves it to the `tokens` table (`revoked_is = 0`), and returns it.",
         "requestBody": {
           "required": true,
           "content": {
@@ -153,9 +153,9 @@
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/ErrorResponse" },
                 "examples": {
-                  "missing":  { "summary": "No header",      "value": { "error": "Missing or malformed Authorization header. Expected: 'Authorization: Bearer <token>'" } },
-                  "expired":  { "summary": "Expired token",  "value": { "error": "Token has expired. Please login again." } },
-                  "invalid":  { "summary": "Invalid token",  "value": { "error": "Invalid token: Subject must be a string" } }
+                  "missing": { "summary": "No header",     "value": { "error": "Missing or malformed Authorization header. Expected: 'Authorization: Bearer <token>'" } },
+                  "expired": { "summary": "Expired token", "value": { "error": "Token has expired. Please login again." } },
+                  "invalid": { "summary": "Invalid token", "value": { "error": "Invalid token: Subject must be a string" } }
                 }
               }
             }
@@ -183,7 +183,7 @@
       "post": {
         "tags": ["Jobs"],
         "summary": "Create a job",
-        "description": "Creates a new job posting. **Admin role required.** The authenticated user is identified via the JWT decoded by `middleware_login.py`.",
+        "description": "Creates a new job posting. **Admin role required.**",
         "security": [{ "BearerAuth": [] }],
         "requestBody": {
           "required": true,
@@ -218,7 +218,7 @@
       "get": {
         "tags": ["Analysis"],
         "summary": "Get analysis records",
-        "description": "Returns resume analysis records. **Admin** sees all records sorted by score. **Regular users** see only their own records. User identity comes from the JWT decoded by `middleware_login.py`.",
+        "description": "Returns resume analysis records. **Admin** sees all records sorted by score. **Regular users** see only their own records.",
         "security": [{ "BearerAuth": [] }],
         "responses": {
           "200": {
@@ -236,7 +236,7 @@
       "post": {
         "tags": ["Analysis"],
         "summary": "Analyze a resume against a job",
-        "description": "Upload a `.docx` or `.pdf` resume and score it against a job description using TF-IDF cosine similarity + skill matching. The record is saved under the authenticated user's ID (from JWT). Requires a valid JWT.",
+        "description": "Upload a `.docx` or `.pdf` resume and score it against a job description using TF-IDF cosine similarity + skill matching. The record is saved under the authenticated user's ID (from JWT).",
         "security": [{ "BearerAuth": [] }],
         "requestBody": {
           "required": true,

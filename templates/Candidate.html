@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Candidate Dashboard | Recruiter Pro</title>
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary":                   "#00658d",
+                        "primary-container":         "#00a3e0",
+                        "primary-fixed":             "#c6e7ff",
+                        "primary-fixed-dim":         "#81cfff",
+                        "on-primary":                "#ffffff",
+                        "on-primary-container":      "#00354b",
+                        "on-primary-fixed":          "#001e2d",
+                        "on-primary-fixed-variant":  "#004c6b",
+                        "secondary":                 "#3c637a",
+                        "secondary-container":       "#bbe2fe",
+                        "secondary-fixed":           "#c6e7ff",
+                        "secondary-fixed-dim":       "#a5cce7",
+                        "on-secondary":              "#ffffff",
+                        "on-secondary-container":    "#3f657d",
+                        "on-secondary-fixed":        "#001e2d",
+                        "on-secondary-fixed-variant":"#234b62",
+                        "tertiary":                  "#8b5000",
+                        "tertiary-container":        "#da841a",
+                        "tertiary-fixed":            "#ffdcbe",
+                        "tertiary-fixed-dim":        "#ffb872",
+                        "on-tertiary":               "#ffffff",
+                        "on-tertiary-container":     "#4a2800",
+                        "on-tertiary-fixed":         "#2d1600",
+                        "on-tertiary-fixed-variant": "#6a3c00",
+                        "error":                     "#ba1a1a",
+                        "error-container":           "#ffdad6",
+                        "on-error":                  "#ffffff",
+                        "on-error-container":        "#93000a",
+                        "background":                "#f7f9fb",
+                        "on-background":             "#191c1e",
+                        "surface":                   "#f7f9fb",
+                        "surface-bright":            "#f7f9fb",
+                        "surface-dim":               "#d8dadc",
+                        "surface-variant":           "#e0e3e5",
+                        "surface-tint":              "#00658d",
+                        "surface-container-lowest":  "#ffffff",
+                        "surface-container-low":     "#f2f4f6",
+                        "surface-container":         "#eceef0",
+                        "surface-container-high":    "#e6e8ea",
+                        "surface-container-highest": "#e0e3e5",
+                        "on-surface":                "#191c1e",
+                        "on-surface-variant":        "#3e4850",
+                        "outline":                   "#6e7881",
+                        "outline-variant":           "#bdc8d1",
+                        "inverse-primary":           "#81cfff",
+                        "inverse-surface":           "#2d3133",
+                        "inverse-on-surface":        "#eff1f3"
+                    },
+                    borderRadius: {
+                        DEFAULT: "0.25rem",
+                        lg:      "0.5rem",
+                        xl:      "0.75rem",
+                        full:    "9999px"
+                    },
+                    fontFamily: {
+                        headline: ["Manrope"],
+                        body:     ["Inter"],
+                        label:    ["Inter"]
+                    }
+                }
+            }
+        };
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3, .font-headline { font-family: 'Manrope', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .primary-gradient { background: linear-gradient(135deg, #00658d 0%, #00a3e0 100%); }
+        .glass-header {
+            background: rgba(247, 249, 251, 0.85);
+            backdrop-filter: blur(12px);
+        }
+    </style>
+</head>
+
+<body class="bg-background text-on-surface">
+
+    <!-- ── Top Navigation ─────────────────────────────────────────────────── -->
+    <nav class="fixed top-0 w-full z-50 glass-header flex justify-between items-center px-8 h-16 shadow-sm">
+        <div class="flex items-center gap-8">
+            <span class="text-2xl font-black tracking-tight text-primary">Recruiter Pro</span>
+            <div class="hidden md:flex gap-6">
+                <a href="#jobs"     class="font-headline font-bold text-lg text-primary border-b-2 border-primary pb-1">Jobs</a>
+                <a href="#status"   class="font-headline font-bold text-lg text-on-surface-variant hover:text-primary transition-colors">Applications</a>
+                <a href="#"         class="font-headline font-bold text-lg text-on-surface-variant hover:text-primary transition-colors">Reports</a>
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <button aria-label="Notifications" class="p-2 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-all">
+                <span class="material-symbols-outlined">notifications</span>
+            </button>
+            <button aria-label="Settings" class="p-2 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-all">
+                <span class="material-symbols-outlined">settings</span>
+            </button>
+            <!-- Avatar with dynamic initials fallback -->
+            <div class="h-10 w-10 rounded-full primary-gradient flex items-center justify-center text-white font-bold text-sm border-2 border-primary/20">
+                <span id="navInitials">?</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ── Sidebar ────────────────────────────────────────────────────────── -->
+    <aside class="hidden lg:flex flex-col h-screen w-64 fixed left-0 top-0 pt-20 bg-surface-container-lowest z-40 border-r border-outline-variant/10">
+        <!-- User info -->
+        <div class="px-6 mb-6">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="h-12 w-12 rounded-xl primary-gradient flex items-center justify-center text-white font-bold">
+                    <span id="sidebarInitials">?</span>
+                </div>
+                <div>
+                    <p class="font-headline font-bold text-on-surface text-sm" id="sidebarName">Loading…</p>
+                    <p class="text-xs text-on-surface-variant capitalize" id="sidebarRole">candidate</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Nav links -->
+        <nav class="flex-1 space-y-1 px-2">
+            <a href="#" class="primary-gradient text-white rounded-r-full py-3 px-6 shadow-md flex items-center gap-3 font-headline font-medium text-sm">
+                <span class="material-symbols-outlined">dashboard</span> Dashboard
+            </a>
+            <a href="#status" class="text-on-surface-variant py-3 px-6 hover:bg-surface-container-low transition-all flex items-center gap-3 font-headline font-medium text-sm rounded-r-full">
+                <span class="material-symbols-outlined">work</span> My Applications
+            </a>
+            <a href="#" class="text-on-surface-variant py-3 px-6 hover:bg-surface-container-low transition-all flex items-center gap-3 font-headline font-medium text-sm rounded-r-full">
+                <span class="material-symbols-outlined">settings</span> Settings
+            </a>
+        </nav>
+
+        <!-- Logout -->
+        <div class="pb-8 px-2">
+            <button
+                onclick="handleLogout()"
+                class="w-full text-on-surface-variant py-3 px-6 hover:bg-surface-container-low transition-all flex items-center gap-3 font-headline font-medium text-sm rounded-r-full"
+            >
+                <span class="material-symbols-outlined">logout</span> Logout
+            </button>
+        </div>
+    </aside>
+
+    <!-- ── Main Content ───────────────────────────────────────────────────── -->
+    <main class="lg:pl-64 pt-20 min-h-screen pb-20 lg:pb-0">
+        <div class="max-w-7xl mx-auto px-6 py-8">
+
+            <!-- Page header -->
+            <header class="mb-10">
+                <h1 class="text-4xl font-extrabold tracking-tight text-on-surface mb-2">Candidate Dashboard</h1>
+                <p class="text-on-surface-variant text-lg">
+                    Welcome back, <span id="welcomeName" class="font-semibold text-primary">…</span>.
+                </p>
+            </header>
+
+            <!-- Toast notification -->
+            <div id="toast" class="hidden fixed top-20 right-6 z-50 px-5 py-3 rounded-xl shadow-lg text-white text-sm font-medium transition-all"></div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+                <!-- ── Left Column ──────────────────────────────────────── -->
+                <div class="lg:col-span-4 space-y-8">
+
+                    <!-- Profile Card -->
+                    <section class="bg-surface-container-lowest rounded-[2rem] p-8 shadow-sm relative overflow-hidden group border border-outline-variant/10">
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-bl-full transition-all group-hover:scale-110"></div>
+                        <div class="relative z-10">
+                            <div class="h-20 w-20 rounded-2xl primary-gradient flex items-center justify-center text-white text-3xl font-black mb-6 shadow-lg">
+                                <span id="profileInitials">?</span>
+                            </div>
+                            <h2 class="text-2xl font-bold text-on-surface mb-1" id="profileName">Loading…</h2>
+                            <p class="text-on-surface-variant mb-6 font-medium capitalize" id="profileRole">candidate</p>
+                            <button class="flex items-center gap-2 text-primary font-bold hover:gap-3 transition-all">
+                                <span>Edit Profile</span>
+                                <span class="material-symbols-outlined text-sm">arrow_forward</span>
+                            </button>
+                        </div>
+                    </section>
+
+                    <!-- Resume Upload Card -->
+                    <section class="bg-surface-container-low rounded-[2rem] p-8 border border-outline-variant/10">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="font-headline font-bold text-xl">Upload Resume</h3>
+                            <span class="material-symbols-outlined text-primary">description</span>
+                        </div>
+
+                        <!-- Error / success -->
+                        <div id="analyzeError"   class="hidden mb-3 p-3 rounded-lg bg-error-container text-on-error-container text-sm"></div>
+                        <div id="analyzeSuccess" class="hidden mb-3 p-3 rounded-lg bg-green-50 text-green-800 text-sm"></div>
+
+                        <form id="analyzeForm" novalidate class="space-y-4">
+                            <!-- Job selector -->
+                            <div>
+                                <label class="block text-sm font-semibold text-on-surface-variant mb-1" for="jobSelect">
+                                    Select Job
+                                </label>
+                                <select
+                                    id="jobSelect"
+                                    class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-xl py-3 px-4 text-on-surface text-sm focus:ring-2 focus:ring-primary/20"
+                                >
+                                    <option value="">Loading jobs…</option>
+                                </select>
+                            </div>
+
+                            <!-- File input -->
+                            <div class="border-2 border-dashed border-outline-variant/40 rounded-2xl p-6 bg-surface-container-lowest hover:border-primary/40 transition-colors">
+                                <input
+                                    type="file"
+                                    id="resumeFile"
+                                    accept=".pdf,.docx"
+                                    required
+                                    class="w-full text-sm text-on-surface-variant file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
+                                />
+                                <p class="text-xs text-on-surface-variant mt-2">Supported: PDF, DOCX · Max 16 MB</p>
+                            </div>
+
+                            <button
+                                id="analyzeBtn"
+                                type="submit"
+                                class="w-full py-3 primary-gradient text-white rounded-xl font-bold shadow-lg shadow-primary/20 hover:-translate-y-0.5 active:scale-[0.98] transition-all"
+                            >
+                                Analyze Resume
+                            </button>
+                        </form>
+                    </section>
+                </div>
+
+                <!-- ── Right Column ─────────────────────────────────────── -->
+                <div class="lg:col-span-8 space-y-10">
+
+                    <!-- Job Matches -->
+                    <section id="jobs">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="font-headline font-extrabold text-2xl">Job Matches</h3>
+                            <button class="text-primary font-bold text-sm hover:underline" onclick="loadJobs()">Refresh</button>
+                        </div>
+                        <div id="jobsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <p class="text-on-surface-variant text-sm col-span-2">Loading jobs…</p>
+                        </div>
+                    </section>
+
+                    <!-- Application / Analysis Status -->
+                    <section id="status" class="bg-surface-container-low rounded-[2.5rem] p-8 overflow-hidden border border-outline-variant/10">
+                        <div class="flex items-center justify-between mb-8">
+                            <h3 class="font-headline font-extrabold text-2xl">My Analysis Results</h3>
+                            <button class="text-primary font-bold text-sm hover:underline" onclick="loadRecords()">Refresh</button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full border-separate border-spacing-y-3">
+                                <thead>
+                                    <tr class="text-left">
+                                        <th class="pb-2 px-4 text-xs font-bold text-on-surface-variant uppercase tracking-widest">File</th>
+                                        <th class="pb-2 px-4 text-xs font-bold text-on-surface-variant uppercase tracking-widest">Score</th>
+                                        <th class="pb-2 px-4 text-xs font-bold text-on-surface-variant uppercase tracking-widest">Matched Skills</th>
+                                        <th class="pb-2 px-4 text-xs font-bold text-on-surface-variant uppercase tracking-widest">Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recordsBody">
+                                    <tr>
+                                        <td colspan="4" class="py-8 text-center text-on-surface-variant text-sm">Loading…</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- ── Mobile Bottom Nav ──────────────────────────────────────────────── -->
+    <nav class="lg:hidden fixed bottom-0 left-0 w-full bg-surface-container-lowest border-t border-outline-variant/20 shadow-[0_-4px_16px_rgba(0,0,0,0.05)] flex justify-around py-3 px-6 z-50">
+        <button class="flex flex-col items-center gap-1 text-primary">
+            <span class="material-symbols-outlined">dashboard</span>
+            <span class="text-[10px] font-bold">Dashboard</span>
+        </button>
+        <button class="flex flex-col items-center gap-1 text-on-surface-variant" onclick="document.getElementById('jobs').scrollIntoView({behavior:'smooth'})">
+            <span class="material-symbols-outlined">work</span>
+            <span class="text-[10px] font-medium">Jobs</span>
+        </button>
+        <button class="flex flex-col items-center gap-1 text-on-surface-variant" onclick="document.getElementById('status').scrollIntoView({behavior:'smooth'})">
+            <span class="material-symbols-outlined">assignment</span>
+            <span class="text-[10px] font-medium">Results</span>
+        </button>
+        <button class="flex flex-col items-center gap-1 text-on-surface-variant" onclick="handleLogout()">
+            <span class="material-symbols-outlined">logout</span>
+            <span class="text-[10px] font-medium">Logout</span>
+        </button>
+    </nav>
+
+    <!-- ── Scripts ───────────────────────────────────────────────────────── -->
+    <script>
+        // ── Auth guard ────────────────────────────────────────────────────
+        const token = localStorage.getItem('jwt_token');
+        const user  = JSON.parse(localStorage.getItem('jwt_user') || 'null');
+
+        if (!token || !user) {
+            window.location.replace('/login');
+        }
+
+        // ── Populate user info ────────────────────────────────────────────
+        const initials = (user?.username || '?').slice(0, 2).toUpperCase();
+        document.getElementById('navInitials').textContent     = initials;
+        document.getElementById('sidebarInitials').textContent = initials;
+        document.getElementById('profileInitials').textContent = initials;
+        document.getElementById('sidebarName').textContent     = user?.username || '';
+        document.getElementById('profileName').textContent     = user?.username || '';
+        document.getElementById('sidebarRole').textContent     = user?.role     || 'candidate';
+        document.getElementById('profileRole').textContent     = user?.role     || 'candidate';
+        document.getElementById('welcomeName').textContent     = user?.username || '';
+
+        // ── Authenticated fetch ───────────────────────────────────────────
+        async function apiFetch(url, options = {}) {
+            options.headers = Object.assign({}, options.headers, {
+                'Authorization': 'Bearer ' + token
+            });
+            const res = await fetch(url, options);
+            if (res.status === 401) {
+                localStorage.removeItem('jwt_token');
+                localStorage.removeItem('jwt_user');
+                window.location.replace('/login');
+                return null;
+            }
+            return res;
+        }
+
+        // ── Toast ─────────────────────────────────────────────────────────
+        function showToast(msg, type = 'success') {
+            const el = document.getElementById('toast');
+            el.textContent  = msg;
+            el.className    = `fixed top-20 right-6 z-50 px-5 py-3 rounded-xl shadow-lg text-white text-sm font-medium transition-all ${type === 'error' ? 'bg-error' : 'bg-primary'}`;
+            el.classList.remove('hidden');
+            setTimeout(() => el.classList.add('hidden'), 3500);
+        }
+
+        // ── Logout ────────────────────────────────────────────────────────
+        async function handleLogout() {
+            localStorage.removeItem('jwt_token');
+            localStorage.removeItem('jwt_user');
+            window.location.replace('/logout');
+        }
+
+        // ── Load jobs ─────────────────────────────────────────────────────
+        async function loadJobs() {
+            const res  = await apiFetch('/api/jobs');
+            if (!res) return;
+            const jobs = await res.json();
+
+            // Populate job select
+            const sel = document.getElementById('jobSelect');
+            sel.innerHTML = jobs.length
+                ? jobs.map(j => `<option value="${j.id}">${j.title || 'Job #' + j.id}</option>`).join('')
+                : '<option value="">No jobs available</option>';
+
+            // Render job cards
+            const grid = document.getElementById('jobsGrid');
+            if (!jobs.length) {
+                grid.innerHTML = '<p class="text-on-surface-variant text-sm col-span-2">No job postings yet.</p>';
+                return;
+            }
+            grid.innerHTML = jobs.map(j => `
+                <div class="bg-surface-container-lowest p-6 rounded-3xl shadow-sm hover:shadow-md transition-all group border border-outline-variant/10">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="h-12 w-12 rounded-xl bg-secondary-container/30 flex items-center justify-center">
+                            <span class="material-symbols-outlined text-secondary">work</span>
+                        </div>
+                        <span class="bg-tertiary-fixed text-on-tertiary-fixed text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                            Job #${j.id}
+                        </span>
+                    </div>
+                    <h4 class="font-headline font-bold text-lg text-on-surface group-hover:text-primary transition-colors mb-1">
+                        ${j.title || 'Untitled'}
+                    </h4>
+                    <p class="text-on-surface-variant text-sm mb-5 line-clamp-2">${j.description || ''}</p>
+                    <button
+                        onclick="document.getElementById('jobSelect').value='${j.id}'; document.getElementById('analyzeForm').scrollIntoView({behavior:'smooth'})"
+                        class="w-full py-3 primary-gradient text-white rounded-xl font-bold shadow-lg shadow-primary/20 hover:-translate-y-0.5 transition-all"
+                    >
+                        Apply / Analyze
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        // ── Load analysis records ─────────────────────────────────────────
+        async function loadRecords() {
+            const res     = await apiFetch('/api/records');
+            if (!res) return;
+            const records = await res.json();
+            const tbody   = document.getElementById('recordsBody');
+
+            if (!records.length) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="py-10 text-center text-on-surface-variant text-sm">
+                            No analysis results yet. Upload a resume to get started.
+                        </td>
+                    </tr>`;
+                return;
+            }
+
+            tbody.innerHTML = records.map(r => {
+                const scoreColor = r.score > 75 ? 'text-green-600 bg-green-50' : r.score > 45 ? 'text-yellow-600 bg-yellow-50' : 'text-red-600 bg-red-50';
+                const fname      = r.filename?.split('_').slice(1).join('_') || r.filename || '—';
+                const skills     = (r.matched_skills || []).slice(0, 3).join(', ') || '—';
+                const date       = r.timestamp ? r.timestamp.split(' ')[0] : '—';
+                return `
+                    <tr class="bg-surface-container-lowest hover:bg-white transition-colors">
+                        <td class="py-4 px-4 rounded-l-2xl font-semibold text-on-surface text-sm">${fname}</td>
+                        <td class="py-4 px-4">
+                            <span class="px-3 py-1 rounded-full text-xs font-bold ${scoreColor}">${r.score}%</span>
+                        </td>
+                        <td class="py-4 px-4 text-on-surface-variant text-sm">${skills}</td>
+                        <td class="py-4 px-4 rounded-r-2xl text-on-surface-variant text-sm">${date}</td>
+                    </tr>`;
+            }).join('');
+        }
+
+        // ── Analyze form submit ───────────────────────────────────────────
+        document.getElementById('analyzeForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const btn    = document.getElementById('analyzeBtn');
+            const file   = document.getElementById('resumeFile').files[0];
+            const jobId  = document.getElementById('jobSelect').value;
+            const errEl  = document.getElementById('analyzeError');
+            const okEl   = document.getElementById('analyzeSuccess');
+
+            errEl.classList.add('hidden');
+            okEl.classList.add('hidden');
+
+            if (!file)  { errEl.textContent = 'Please select a resume file.'; errEl.classList.remove('hidden'); return; }
+            if (!jobId) { errEl.textContent = 'Please select a job.';         errEl.classList.remove('hidden'); return; }
+
+            btn.textContent = 'Analyzing…';
+            btn.disabled    = true;
+
+            const formData = new FormData();
+            formData.append('resume', file);
+            formData.append('job_id', jobId);
+
+            try {
+                const res  = await apiFetch('/api/analyze', { method: 'POST', body: formData });
+                if (!res) return;
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Analysis failed');
+
+                okEl.textContent = `Analysis complete! Score: ${data.score}%`;
+                okEl.classList.remove('hidden');
+                showToast(`Score: ${data.score}%`, 'success');
+                await loadRecords();
+            } catch (err) {
+                errEl.textContent = err.message;
+                errEl.classList.remove('hidden');
+                showToast(err.message, 'error');
+            } finally {
+                btn.textContent = 'Analyze Resume';
+                btn.disabled    = false;
+            }
+        });
+
+        // ── Init ──────────────────────────────────────────────────────────
+        loadJobs();
+        loadRecords();
+    </script>
+</body>
+</html>
